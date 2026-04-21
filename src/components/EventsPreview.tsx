@@ -1,14 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, MapPin, ArrowRight } from "lucide-react";
-import { mockEvents } from "@/lib/data";
+import { Clock, MapPin, ArrowRight, Pin } from "lucide-react";
+import { useEvents } from "@/lib/admin-store";
 import type { CommunityFilter } from "@/routes/index";
 
 export function EventsPreview({ filter = "all" }: { filter?: CommunityFilter }) {
+  const all = useEvents();
   const filtered =
     filter === "all"
-      ? mockEvents
-      : mockEvents.filter((e) =>
+      ? all
+      : all.filter((e) =>
           filter === "cinema"
             ? e.community === "Cinema EZ" || e.community === "Both"
             : e.community === "Anime EZ" || e.community === "Both"
@@ -20,22 +21,36 @@ export function EventsPreview({ filter = "all" }: { filter?: CommunityFilter }) 
     return { day: dt.getDate(), mon: dt.toLocaleString("en-US", { month: "short" }) };
   };
 
+  // 50/50 visual split for the EVENTS title — split letter-by-letter so each
+  // half (gold "EVE" + purple "NTS") covers the same horizontal width regardless
+  // of letter widths.
+  const eventsTitle = (
+    <span className="inline-flex items-baseline">
+      <span style={{
+        background: filter === "anime"
+          ? "linear-gradient(90deg, var(--anime-purple), var(--anime-cyan))"
+          : "linear-gradient(90deg, var(--cinema-gold), var(--cinema-amber))",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+      }}>EVE</span>
+      <span style={{
+        background: filter === "cinema"
+          ? "linear-gradient(90deg, var(--cinema-gold), var(--cinema-amber))"
+          : "linear-gradient(90deg, var(--anime-purple), var(--anime-cyan))",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+      }}>NTS</span>
+    </span>
+  );
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
         transition={{ duration: 0.6 }} className="text-center mb-12">
         <h2 className="font-display text-4xl md:text-5xl tracking-wider mb-3">
-          UPCOMING{" "}
-          <span style={{
-            background: filter === "cinema"
-              ? "linear-gradient(90deg, var(--cinema-gold), var(--cinema-amber))"
-              : filter === "anime"
-              ? "linear-gradient(90deg, var(--anime-purple), var(--anime-cyan))"
-              : "linear-gradient(90deg, var(--cinema-gold) 0%, var(--cinema-gold) 50%, var(--anime-purple) 50%, var(--anime-purple) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>EVENTS</span>
+          UPCOMING {eventsTitle}
         </h2>
         <p className="text-muted-foreground font-body text-sm max-w-md mx-auto">
           Community gatherings, cosplay meetups, and exclusive experiences
@@ -58,18 +73,24 @@ export function EventsPreview({ filter = "all" }: { filter?: CommunityFilter }) 
           )}
           {list.map((event, i) => {
             const d = formatDate(event.date);
+            // Force the correct community card class based on event.community
+            const cardClass =
+              event.community === "Anime EZ" ? "card-anime"
+              : event.community === "Cinema EZ" ? "card-cinema"
+              : "card-both";
             return (
               <Link key={event.id} to="/events" className="block">
                 <motion.div
                   initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1, duration: 0.4 }}
-                  className={`group relative bg-card rounded-xl border p-5 cursor-pointer ${
-                    event.community === "Cinema EZ" ? "card-cinema"
-                      : event.community === "Anime EZ" ? "card-anime"
-                      : "card-both"
-                  }`}
+                  className={`group relative bg-card rounded-xl border p-5 cursor-pointer ${cardClass}`}
                 >
+                  {event.pinned && (
+                    <span className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-body font-bold bg-yellow-400 text-black z-10">
+                      <Pin className="w-2.5 h-2.5" /> PINNED
+                    </span>
+                  )}
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-shrink-0 flex sm:flex-col items-center sm:items-center gap-2 sm:gap-0 sm:w-16 sm:py-2">
                       <span className="font-display text-2xl sm:text-3xl text-primary leading-none">{d.day}</span>

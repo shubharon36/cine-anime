@@ -5,6 +5,7 @@ import { type ScreenType, type Screening } from "@/lib/data";
 import { getAuditorium, type Auditorium, type SeatSection } from "@/lib/venues";
 import { createBooking, organizerUpiId } from "@/lib/bookings";
 import { BookingTicket } from "@/components/BookingTicket";
+import { getCharacterForTitle } from "@/lib/film-characters";
 
 interface SeatSelectionProps {
   screening: Screening;
@@ -56,6 +57,7 @@ export function SeatSelection({ screening, onClose }: SeatSelectionProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const config = screenTypeConfig[screening.screenType];
+  const characterImg = getCharacterForTitle(screening.title, screening.characterImage);
 
   const audi = getAuditorium(screening.venueId, screening.audiId);
 
@@ -218,37 +220,50 @@ export function SeatSelection({ screening, onClose }: SeatSelectionProps) {
           <span className="text-xs text-muted-foreground font-body tracking-widest uppercase">{config.label}</span>
         </div>
 
-        {/* Seat Map */}
-        <div className="space-y-5 mb-6">
-          {audi.sections.map((section, si) => (
-            <div key={`${section.name}-${si}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`text-xs font-body font-medium uppercase tracking-wider ${section.color}`}>
-                  {section.name} — ₹{section.price}
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {section.rows.map((audiRow) => (
-                  <div key={audiRow.label} className="flex items-center gap-1 justify-center">
-                    <span className="w-5 text-xs text-muted-foreground font-body text-right mr-1">{audiRow.label}</span>
-                    <div className="flex gap-0.5 items-center">
-                      {audiRow.segments.map((segment, segIdx) => (
-                        <div key={segIdx} className={`flex gap-0.5 ${segIdx > 0 ? "ml-3 sm:ml-5" : ""}`}>
-                          {segment.map((seatNum, seatIdx) => {
-                            if (seatNum === 0) {
-                              return <div key={`gap-${seatIdx}`} className="w-5 h-5 sm:w-6 sm:h-6" />;
+        {/* Seat Map — horizontally scrollable on mobile so labels stay aligned */}
+        <div className="space-y-5 mb-6 overflow-x-auto -mx-2 px-2 pb-2">
+          {audi.sections.map((section, si) => {
+            const maxSeatNum = Math.max(
+              ...audi.sections.flatMap((s) =>
+                s.rows.flatMap((r) => r.segments.flatMap((seg) => seg))
+              ),
+              1,
+            );
+            return (
+              <div key={`${section.name}-${si}`} className="min-w-fit">
+                <div className="flex items-center gap-2 mb-2 sticky left-0">
+                  <span className={`text-xs font-body font-medium uppercase tracking-wider ${section.color}`}>
+                    {section.name} — ₹{section.price}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {section.rows.map((audiRow) => {
+                    const seatGrid: (number | null)[] = Array(maxSeatNum + 1).fill(null);
+                    audiRow.segments.forEach((seg) => {
+                      seg.forEach((n) => {
+                        if (n > 0) seatGrid[n] = n;
+                      });
+                    });
+                    return (
+                      <div key={audiRow.label} className="flex items-center gap-2">
+                        <span className="w-4 text-[10px] text-muted-foreground font-body text-right shrink-0 sticky left-0 bg-card">{audiRow.label}</span>
+                        <div className="flex gap-0.5 items-center">
+                          {Array.from({ length: maxSeatNum }, (_, idx) => {
+                            const n = idx + 1;
+                            const seatId = `${audiRow.label}${n}`;
+                            const exists = seatGrid[n] !== null;
+                            if (!exists) {
+                              return <div key={`gap-${n}`} className="w-5 h-5 shrink-0" />;
                             }
-                            const seatId = `${audiRow.label}${seatNum}`;
                             const isBooked = bookedSeats.has(seatId);
                             const isSelected = selectedSeats.has(seatId);
-
                             return (
                               <button
                                 key={seatId}
                                 onClick={() => toggleSeat(seatId)}
                                 disabled={isBooked}
                                 title={seatId}
-                                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-t-md text-[8px] sm:text-[9px] font-body font-medium transition-all duration-150 ${
+                                className={`relative w-5 h-5 rounded-t-md text-[8px] font-body font-medium transition-all duration-150 shrink-0 overflow-hidden ${
                                   isBooked
                                     ? "bg-muted/50 text-muted-foreground/30 cursor-not-allowed"
                                     : isSelected
@@ -256,19 +271,23 @@ export function SeatSelection({ screening, onClose }: SeatSelectionProps) {
                                     : "bg-secondary text-secondary-foreground hover:bg-accent hover:scale-105 cursor-pointer"
                                 }`}
                               >
-                                {seatNum}
+                                {isSelected && characterImg ? (
+                                  <img src={characterImg} alt="" className="absolute inset-0 w-full h-full object-cover rounded-t-md" />
+                                ) : (
+                                  n
+                                )}
                               </button>
                             );
                           })}
                         </div>
-                      ))}
-                    </div>
-                    <span className="w-5 text-xs text-muted-foreground font-body ml-1">{audiRow.label}</span>
-                  </div>
-                ))}
+                        <span className="w-4 text-[10px] text-muted-foreground font-body shrink-0">{audiRow.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Legend */}

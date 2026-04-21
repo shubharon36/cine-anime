@@ -587,3 +587,61 @@ function InputField({ label, value, onChange, type = "text", placeholder }: {
     </div>
   );
 }
+/* ── Stats Editor (live override of homepage numbers + UPI ID) ── */
+function StatsEditor() {
+  const override = useStatsOverride();
+  const [upi, setUpi] = useState(organizerUpiId);
+  const fields: { key: "members" | "screeningsDone" | "animeEvents" | "cinemaPartners"; label: string }[] = [
+    { key: "members", label: "Members" },
+    { key: "screeningsDone", label: "Screenings Done" },
+    { key: "animeEvents", label: "Anime Events" },
+    { key: "cinemaPartners", label: "Cinema Partners" },
+  ];
+  return (
+    <div className="bg-card rounded-xl border border-border p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg tracking-wider">Homepage Stats & Payment</h3>
+        <button onClick={() => setStatsOverride({})} className="text-[11px] font-body text-muted-foreground hover:text-foreground">
+          Auto (use live counts)
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground font-body mb-3">
+        Leave blank to auto-count. Numbers update live across the site.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        {fields.map((f) => (
+          <div key={f.key}>
+            <label className="text-[11px] text-muted-foreground font-body mb-1 block">{f.label}</label>
+            <input
+              type="number"
+              value={override[f.key] ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                setStatsOverride({ ...override, [f.key]: v === "" ? undefined : Number(v) });
+              }}
+              placeholder="auto"
+              className="w-full px-2 py-1.5 rounded-lg bg-secondary border border-border text-sm font-body focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        ))}
+      </div>
+      <div>
+        <label className="text-[11px] text-muted-foreground font-body mb-1 block">Organizer UPI ID (for ticket payments)</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={upi}
+            onChange={(e) => setUpi(e.target.value)}
+            placeholder="cinemaaz@upi"
+            className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm font-body focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+          <button onClick={() => setOrganizerUpiId(upi)}
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-body font-semibold hover:opacity-90">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

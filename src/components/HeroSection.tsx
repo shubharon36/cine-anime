@@ -13,7 +13,6 @@ const fadeUp = {
   }),
 };
 
-
 export function HeroSection({
   filter,
   onFilter,

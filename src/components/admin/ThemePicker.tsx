@@ -10,11 +10,8 @@ const PRESET_PAIRS: Array<[string, string, string]> = [
   ["Spider-Man", "#E1351A", "#1A4FE0"],
   ["Avengers Doomsday", "#C9A227", "#1B4332"],
   ["Dune", "#D4A155", "#7A4E1F"],
-  ["The Batman", "#1A1A1A", "#7A0000"],
   ["Cinema EZ", "#D4AF37", "#B8860B"],
   ["Anime EZ", "#7C3AED", "#22D3EE"],
-  ["Sunset", "#FF6B35", "#F7B731"],
-  ["Midnight", "#0F2027", "#2C5364"],
 ];
 
 export function ThemePicker({
